@@ -30,6 +30,7 @@ _TASKSETS = {
     'tiered-imagenet': tiered_imagenet_tasksets,
     'fc100': fc100_tasksets,
     'cifarfs': cifarfs_tasksets,
+    'meta_kws_tasksets': meta_kws_tasksets,
 }
 
 
@@ -94,7 +95,7 @@ def get_tasksets(
     batch = tasksets.train.sample()
     ~~~
     """
-    root = os.path.expanduser(root)
+    root = /home/daniel094144/sam/meta-KWS/data_t
 
     if device is not None:
         raise NotImplementedError('Device other than None not implemented. (yet)')

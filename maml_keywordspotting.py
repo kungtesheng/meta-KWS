@@ -65,7 +65,7 @@ def main(
         device = torch.device('cuda')
 
     # Load train/validation/test tasksets using the benchmark interface
-    tasksets = l2l.vision.benchmarks.get_tasksets('omniglot',
+    tasksets = l2l.vision.benchmarks.get_tasksets('meta_kws_tasksets',
                                                   train_ways=ways,
                                                   train_samples=2*shots,
                                                   test_ways=ways,
@@ -75,7 +75,7 @@ def main(
     )
 
     # Create model
-    model = l2l.vision.models.OmniglotFC(28 ** 2, ways)
+    model = l2l.vision.models.ResNet12(output_size=ways)
     model.to(device)
     maml = l2l.algorithms.MAML(model, lr=fast_lr, first_order=False)
     opt = optim.Adam(maml.parameters(), meta_lr)
