@@ -20,26 +20,27 @@ def meta_kws_tasksets(
     """
     data_transforms = transforms.Compose([
         #transforms.Resize(28, interpolation=LANCZOS),
+        transforms.ToPILImage(),
         transforms.ToTensor(),
         lambda x: 1.0 - x,
     ])
     kws = l2l.vision.datasets.Meta_kws(
         root=root,
         transform=data_transforms,
-        download=True,
+        download=False,
     )
     dataset = l2l.data.MetaDataset(kws)
     train_dataset = dataset
     validation_datatset = dataset
     test_dataset = dataset
 
-    classes = list(range(1623))
+    classes = list(range(35))
     random.shuffle(classes)
     train_transforms = [
         l2l.data.transforms.FusedNWaysKShots(dataset,
                                              n=train_ways,
                                              k=train_samples,
-                                             filter_labels=classes[:1100]),
+                                             filter_labels=classes[:20]),
         l2l.data.transforms.LoadData(dataset),
         l2l.data.transforms.RemapLabels(dataset),
         l2l.data.transforms.ConsecutiveLabels(dataset),
@@ -49,7 +50,7 @@ def meta_kws_tasksets(
         l2l.data.transforms.FusedNWaysKShots(dataset,
                                              n=test_ways,
                                              k=test_samples,
-                                             filter_labels=classes[1100:1200]),
+                                             filter_labels=classes[20:25]),
         l2l.data.transforms.LoadData(dataset),
         l2l.data.transforms.RemapLabels(dataset),
         l2l.data.transforms.ConsecutiveLabels(dataset),
@@ -59,7 +60,7 @@ def meta_kws_tasksets(
         l2l.data.transforms.FusedNWaysKShots(dataset,
                                              n=test_ways,
                                              k=test_samples,
-                                             filter_labels=classes[1200:]),
+                                             filter_labels=classes[25:]),
         l2l.data.transforms.LoadData(dataset),
         l2l.data.transforms.RemapLabels(dataset),
         l2l.data.transforms.ConsecutiveLabels(dataset),

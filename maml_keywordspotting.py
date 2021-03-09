@@ -52,7 +52,7 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=60000,
+        num_iterations=10,
         cuda=True,
         seed=42,
 ):
@@ -71,7 +71,7 @@ def main(
                                                   test_ways=ways,
                                                   test_samples=2*shots,
                                                   num_tasks=20000,
-                                                  root='~/data',
+                                                  root='/home/daniel094144/sam/meta-KWS/data_t/meta_kws/train',
     )
 
     # Create model

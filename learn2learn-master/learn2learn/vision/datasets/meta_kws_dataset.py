@@ -2,7 +2,16 @@
 
 import os
 from torch.utils.data import Dataset, ConcatDataset
-from torchvision.datasets.omniglot import Omniglot
+import glob
+import torchaudio
+import torch.nn.functional as nnf
+import torch
+
+class data_info:
+    def __init__(self, root, label):
+        self.data_root = root
+        self.data_label = label
+
 
 
 class Meta_kws(Dataset):
@@ -51,7 +60,25 @@ class Meta_kws(Dataset):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
+        
+        self.data_count = 0
+        class_len = 0
+        class_tem = []
+        self.dataset =[]
 
+        for name_class in glob.glob(self.root+'/*'):
+            class_tem.append(name_class)
+            class_len += 1
+
+        for name in glob.glob(self.root+'/*/*'):
+            data_tem = name
+            root_tem = data_tem[:data_tem.rfind('/')]
+            for class_count in range(class_len):
+                if root_tem == class_tem[class_count]:
+                    self.dataset.append( data_info(data_tem,class_count) )
+                    data_tem = ''
+                    break
+            self.data_count += 1
         # # Set up both the background and eval dataset
         # omni_background = Omniglot(self.root, background=True, download=download)
         # # Eval labels also start from 0.
@@ -62,17 +89,22 @@ class Meta_kws(Dataset):
         #                            target_transform=lambda x: x + len(omni_background._characters))
 
         # self.dataset = ConcatDataset((omni_background, omni_evaluation))
-        self._bookkeeping_path = os.path.join(self.root, 'meta_kws-bookkeeping.pkl')
+        # self._bookkeeping_path = os.path.join(self.root, 'meta_kws-bookkeeping.pkl')
+        
+
 
     def __len__(self):
-        return len(self.dataset)
+        return self.data_count
 
     def __getitem__(self, item):
-        image, character_class = self.dataset[item]
+
+        waveform, sample_rate = torchaudio.load(self.dataset[item].data_root)
+        specgram = torchaudio.transforms.Spectrogram()(waveform)
+        label = self.dataset[item].data_label
+        specgram = nnf.interpolate( specgram , size = (81), mode = 'nearest' )
+        print(specgram.shape)
         if self.transform:
-            image = self.transform(image)
-
+            specgram = self.transform(specgram)
         if self.target_transform:
-            character_class = self.target_transform(character_class)
-
-        return image, character_class
+            label = self.target_transform(label)
+        return specgram, label

@@ -17,7 +17,7 @@ from .mini_imagenet_benchmark import mini_imagenet_tasksets
 from .tiered_imagenet_benchmark import tiered_imagenet_tasksets
 from .fc100_benchmark import fc100_tasksets
 from .cifarfs_benchmark import cifarfs_tasksets
-
+from .meta_kws_benchmark import meta_kws_tasksets
 
 __all__ = ['list_tasksets', 'get_tasksets']
 
