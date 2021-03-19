@@ -99,9 +99,12 @@ class Meta_kws(Dataset):
     def __getitem__(self, item):
 
         waveform, sample_rate = torchaudio.load(self.dataset[item].data_root)
-        specgram = torchaudio.transforms.Spectrogram()(waveform)
+        specgram = torchaudio.transforms.Spectrogram(power = 2)(waveform).sqrt()
         label = self.dataset[item].data_label
         specgram = nnf.interpolate( specgram , size = (81), mode = 'nearest' )
+        specgram = specgram.permute(1,2,0)
+        specgram = nnf.interpolate(specgram , size = (3), mode = 'nearest')
+        specgram = specgram.permute(2,0,1)
         print(specgram.shape)
         if self.transform:
             specgram = self.transform(specgram)

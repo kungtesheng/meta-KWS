@@ -75,7 +75,7 @@ def main(
     )
 
     # Create model
-    model = l2l.vision.models.ResNet12(output_size=ways)
+    model = l2l.vision.models.ResNet12(hidden_size = 5120, output_size=ways)
     model.to(device)
     maml = l2l.algorithms.MAML(model, lr=fast_lr, first_order=False)
     opt = optim.Adam(maml.parameters(), meta_lr)
