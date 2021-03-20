@@ -13,6 +13,7 @@ def meta_kws_tasksets(
     test_ways,
     test_samples,
     root,
+    mode,
     **kwargs
 ):
     """
@@ -28,6 +29,7 @@ def meta_kws_tasksets(
         root=root,
         transform=data_transforms,
         download=False,
+        mode = mode
     )
     dataset = l2l.data.MetaDataset(kws)
     train_dataset = dataset
@@ -50,7 +52,7 @@ def meta_kws_tasksets(
         l2l.data.transforms.FusedNWaysKShots(dataset,
                                              n=test_ways,
                                              k=test_samples,
-                                             filter_labels=classes[20:25]),
+                                             filter_labels=classes[20:30]),
         l2l.data.transforms.LoadData(dataset),
         l2l.data.transforms.RemapLabels(dataset),
         l2l.data.transforms.ConsecutiveLabels(dataset),
@@ -60,7 +62,7 @@ def meta_kws_tasksets(
         l2l.data.transforms.FusedNWaysKShots(dataset,
                                              n=test_ways,
                                              k=test_samples,
-                                             filter_labels=classes[25:]),
+                                             filter_labels=classes[30:]),
         l2l.data.transforms.LoadData(dataset),
         l2l.data.transforms.RemapLabels(dataset),
         l2l.data.transforms.ConsecutiveLabels(dataset),

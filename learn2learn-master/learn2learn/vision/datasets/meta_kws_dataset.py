@@ -56,11 +56,11 @@ class Meta_kws(Dataset):
 
     """
 
-    def __init__(self, root, transform=None, target_transform=None, download=False):
+    def __init__(self, root, mode, transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
-        
+        self.mode = mode
         self.data_count = 0
         class_len = 0
         class_tem = []
@@ -97,17 +97,22 @@ class Meta_kws(Dataset):
         return self.data_count
 
     def __getitem__(self, item):
-
+        
         waveform, sample_rate = torchaudio.load(self.dataset[item].data_root)
-        specgram = torchaudio.transforms.Spectrogram(power = 2)(waveform).sqrt()
         label = self.dataset[item].data_label
-        specgram = nnf.interpolate( specgram , size = (81), mode = 'nearest' )
-        specgram = specgram.permute(1,2,0)
-        specgram = nnf.interpolate(specgram , size = (3), mode = 'nearest')
-        specgram = specgram.permute(2,0,1)
-        print(specgram.shape)
+        if self.mode == 'spec':
+            target_spec = torchaudio.transforms.Spectrogram(power = 2)(waveform).sqrt()
+        if self.mode == 'mel_spec':
+            target_spec = torchaudio.transforms.MelSpectrogram()(waveform)
+        if self.mode == 'mfcc':
+            target_spec = torchaudio.transforms.MFCC()(waveform)
+        target_spec = nnf.interpolate( target_spec , size = (81), mode = 'nearest' )
+        target_spec = target_spec.permute(1,2,0)
+        target_spec = nnf.interpolate( target_spec , size = (3), mode = 'nearest')
+        target_spec = target_spec.permute(2,0,1)
+        # print(target_spec.shape)
         if self.transform:
-            specgram = self.transform(specgram)
+            target_spec = self.transform(target_spec)
         if self.target_transform:
             label = self.target_transform(label)
-        return specgram, label
+        return target_spec, label

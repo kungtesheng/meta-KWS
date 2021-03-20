@@ -11,9 +11,12 @@ import random
 import numpy as np
 import torch
 import learn2learn as l2l
-
+import os
 from torch import nn, optim
 
+# import tensorflow as tf
+# import datetime
+from torch.utils.tensorboard import SummaryWriter
 
 
 def accuracy(predictions, targets):
@@ -52,9 +55,10 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=10,
+        num_iterations=10000,
         cuda=True,
         seed=42,
+        mode='mel_spec',
 ):
     random.seed(seed)
     np.random.seed(seed)
@@ -65,6 +69,7 @@ def main(
         device = torch.device('cuda')
 
     # Load train/validation/test tasksets using the benchmark interface
+    # mode = spec, mel_spec, mfcc
     tasksets = l2l.vision.benchmarks.get_tasksets('meta_kws_tasksets',
                                                   train_ways=ways,
                                                   train_samples=2*shots,
@@ -72,14 +77,34 @@ def main(
                                                   test_samples=2*shots,
                                                   num_tasks=20000,
                                                   root='/home/daniel094144/sam/meta-KWS/data_t/meta_kws/train',
+                                                  mode=mode
     )
 
     # Create model
-    model = l2l.vision.models.ResNet12(hidden_size = 5120, output_size=ways)
+    if mode == 'spec':
+        model = l2l.vision.models.ResNet12(hidden_size = 5120, output_size=ways)
+    if mode == 'mel_spec':
+        model = l2l.vision.models.ResNet12(hidden_size = 2560, output_size=ways)
+    if mode == 'mfcc':
+        model = l2l.vision.models.ResNet12(hidden_size = 5120, output_size=ways)
     model.to(device)
     maml = l2l.algorithms.MAML(model, lr=fast_lr, first_order=False)
     opt = optim.Adam(maml.parameters(), meta_lr)
     loss = nn.CrossEntropyLoss(reduction='mean')
+
+    # tensorboard preprocess
+    # current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    # train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+    # valid_log_dir = 'logs/gradient_tape/' + current_time + '/valid'
+    # test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
+    # train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+    # valid_summary_writer = tf.summary.create_file_writer(valid_log_dir)
+    # test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+    writer = SummaryWriter("logs/mel_spec")
+
+
+
+
 
     for iteration in range(num_iterations):
         opt.zero_grad()
@@ -116,12 +141,22 @@ def main(
             meta_valid_accuracy += evaluation_accuracy.item()
 
         # Print some metrics
-        print('\n')
-        print('Iteration', iteration)
-        print('Meta Train Error', meta_train_error / meta_batch_size)
-        print('Meta Train Accuracy', meta_train_accuracy / meta_batch_size)
-        print('Meta Valid Error', meta_valid_error / meta_batch_size)
-        print('Meta Valid Accuracy', meta_valid_accuracy / meta_batch_size)
+        # with train_summary_writer.as_default():
+        #     tf.summary.scalar('loss', meta_train_error / meta_batch_size, step=iteration)
+        #     tf.summary.scalar('accuracy', meta_train_accuracy / meta_batch_size, step=iteration)
+        # with valid_summary_writer.as_default():
+        #     tf.summary.scalar('loss', meta_valid_error / meta_batch_size, step=iteration)
+        #     tf.summary.scalar('accuracy', meta_valid_accuracy / meta_batch_size, step=iteration)
+        writer.add_scalar('train/loss', meta_train_error / meta_batch_size, iteration)
+        writer.add_scalar('train/accuracy', meta_train_accuracy / meta_batch_size, iteration)
+        writer.add_scalar('valid/loss', meta_valid_error / meta_batch_size, iteration)
+        writer.add_scalar('valid/accuracy', meta_valid_accuracy / meta_batch_size, iteration)
+        # print('\n')
+        # print('Iteration', iteration)
+        # print('Meta Train Error', meta_train_error / meta_batch_size)
+        # print('Meta Train Accuracy', meta_train_accuracy / meta_batch_size)
+        # print('Meta Valid Error', meta_valid_error / meta_batch_size)
+        # print('Meta Valid Accuracy', meta_valid_accuracy / meta_batch_size)
 
         # Average the accumulated gradients and optimize
         for p in maml.parameters():
@@ -143,9 +178,17 @@ def main(
                                                            device)
         meta_test_error += evaluation_error.item()
         meta_test_accuracy += evaluation_accuracy.item()
+    # with train_summary_writer.as_default():
+    #     tf.summary.scalar('loss', meta_test_error / meta_batch_size, step=iteration)
+    #     tf.summary.scalar('accuracy', meta_test_accuracy / meta_batch_size, step=iteration)
     print('Meta Test Error', meta_test_error / meta_batch_size)
     print('Meta Test Accuracy', meta_test_accuracy / meta_batch_size)
-
+    meta_value = ['Meta Test Error = ' + str( meta_test_error / meta_batch_size ) + '\n',
+                     'Meta Test Accuracy = ' + str( meta_test_accuracy / meta_batch_size ) + '\n']
+    with open("Meta_Test.txt", "a") as meta_test_value:
+        # meta_test_value = open("Meta_Test.txt", "a")
+        meta_test_value.writelines(meta_value)
+        # meta_test_value.close()
 
 if __name__ == '__main__':
     main()
